@@ -1,0 +1,12 @@
+{
+  "name": "treebuilder-test-server",
+  "version": "1.0.0",
+  "description": "Local REST server for testing json-loader URL loading",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "client": "node example-client.js"
+  },
+  "keywords": [],
+  "license": "ISC"
+}
