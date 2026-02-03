@@ -1,105 +1,93 @@
 # treebuilder-test-server
 
-Local REST server for testing json-loader URL-based loading.
+A local REST server for testing the `json-loader.js` URL-based loading functions (`loadFromUrl`, `loadAppFromUrl`, `loadFunctionPool`).
 
-## Features
+## Quick Start
 
-- Serves JSON configuration files from the file system
-- Returns function pool configuration
-- Lists available applications
-- Serves individual application configurations
-- CORS-enabled for cross-origin requests
-- Configurable port via command-line or environment variable
-
-## Installation
-
-No external dependencies required - uses Node.js built-in modules only.
-
-## Usage
-
-### Start the Server
-
-Default port (3001):
 ```bash
-npm start
+# Terminal 1 – start the server
+node server.js
+
+# Terminal 2 – run the example client
+node example-client.js
 ```
 
-Custom port via command-line:
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/config/functionPool` | Returns the full function pool JSON |
+| `GET` | `/apps` | Lists available app names |
+| `GET` | `/apps/:appName` | Returns a single app config by name |
+
+### Examples
+
 ```bash
+# List apps
+curl http://localhost:3001/apps
+
+# Get function pool
+curl http://localhost:3001/config/functionPool
+
+# Get a specific app
+curl http://localhost:3001/apps/nims-wt-pend-process-app
+```
+
+## Configuration
+
+**Port** – defaults to `3001`. Override with:
+
+```bash
+# env var
+PORT=8080 node server.js
+
+# CLI flag
 node server.js --port 8080
 ```
 
-Custom port via environment variable:
-```bash
-PORT=8080 npm start
-```
-
-### Run the Example Client
-
-In a separate terminal:
+**Server URL for client** – the example client defaults to `http://localhost:3001`. Override with:
 
 ```bash
-npm run client
+SERVER_URL=http://localhost:8080 node example-client.js
 ```
 
-## Available Endpoints
-
-- `GET /config/functionPool` - Returns the function pool configuration
-- `GET /apps` - Lists all available application names
-- `GET /apps/:appName` - Returns configuration for a specific application
-
-## Data Directory Structure
+## Project Structure
 
 ```
-data/
-├── functionPool.json       # Function pool configuration
-└── apps/                   # Application configurations
-    ├── app1.json
-    ├── app2.json
-    └── demo-app.json
+test-server/
+├── server.js            # REST server (zero dependencies)
+├── example-client.js    # Demo client using json-loader URL functions
+├── tree-builder.js      # Core TreeBuilder (copied from main project)
+├── json-loader.js       # JSON loader with URL support
+├── data/                # Data served by the REST server
+│   ├── functionPool.json
+│   └── apps/
+│       ├── nims-exceptions-app.json
+│       ├── nims-wt-pend-process-app.json
+│       ├── nims-wt-wage-process-app.json
+│       └── nims-wt-file-process-app.json
+└── config/              # Same data in config/ layout (for file-based loading)
+    ├── functionPool.json
+    └── apps/
+        └── ...
 ```
 
-## Example Responses
+## Using with json-loader
 
-### GET /config/functionPool
+```javascript
+import { TreeBuilder } from './tree-builder.js';
+import { loadAppFromUrl, loadFunctionPool } from './json-loader.js';
 
-```json
-{
-  "functions": [
-    {
-      "id": "fn-001",
-      "name": "calculateSum",
-      "description": "Calculates the sum of two numbers",
-      "parameters": ["a", "b"],
-      "returnType": "number"
-    }
-  ],
-  "version": "1.0.0"
-}
+const BASE = 'http://localhost:3001';
+
+// Load function pool from server
+const functionPool = await loadFunctionPool(`${BASE}/config/functionPool`);
+
+// Load a single app config by name
+const appConfig = await loadAppFromUrl(`${BASE}/apps/nims-wt-pend-process-app`);
+
+// Build the tree
+const builder = new TreeBuilder();
+builder.defineFunctions(functionPool);
+const tree = await builder.build(appConfig);
 ```
-
-### GET /apps
-
-```json
-{
-  "apps": ["app1", "app2", "demo-app"]
-}
-```
-
-### GET /apps/app1
-
-```json
-{
-  "name": "app1",
-  "displayName": "Sample Application 1",
-  "version": "1.0.0",
-  "config": {
-    "theme": "light",
-    "language": "en"
-  }
-}
-```
-
-## License
-
-ISC

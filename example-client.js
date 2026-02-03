@@ -1,97 +1,88 @@
-import http from 'http';
+/**
+ * Example client that loads configs from the local REST server.
+ *
+ * Start the server first:   node server.js
+ * Then run this:            node example-client.js
+ */
 
-const BASE_URL = 'http://localhost:3001';
+import { TreeBuilder } from './tree-builder.js';
+import { loadFromUrl, loadAppFromUrl, loadFunctionPool } from './json-loader.js';
 
-// Helper function to make HTTP GET requests
-function fetchData(endpoint) {
-  return new Promise((resolve, reject) => {
-    const url = `${BASE_URL}${endpoint}`;
-    
-    http.get(url, (res) => {
-      let data = '';
+const BASE_URL = process.env.SERVER_URL || 'http://localhost:3001';
 
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
+async function main() {
+    console.log('Tree Builder – REST Client Example\n');
+    console.log(`Server: ${BASE_URL}\n`);
 
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          try {
-            resolve(JSON.parse(data));
-          } catch (e) {
-            reject(new Error(`Failed to parse JSON: ${e.message}`));
-          }
-        } else {
-          reject(new Error(`HTTP ${res.statusCode}: ${data}`));
-        }
-      });
-    }).on('error', (err) => {
-      reject(err);
-    });
-  });
-}
+    // -----------------------------------------------------------------------
+    // 1. List available apps
+    // -----------------------------------------------------------------------
+    console.log('Fetching available apps...');
+    const { apps } = await loadFromUrl(`${BASE_URL}/apps`);
+    console.log('Available apps:');
+    apps.forEach(a => console.log(`  - ${a}`));
 
-// Main function to test the server
-async function testServer() {
-  console.log('🧪 Testing treebuilder-test-server...\n');
+    // -----------------------------------------------------------------------
+    // 2. Load the shared function pool
+    // -----------------------------------------------------------------------
+    console.log('\nLoading function pool from REST endpoint...');
+    const functionPool = await loadFunctionPool(`${BASE_URL}/config/functionPool`);
+    const funcCount = Object.keys(functionPool).length;
+    console.log(`Loaded ${funcCount} function definitions`);
 
-  // Test 1: GET /config/functionPool
-  try {
-    console.log('Testing GET /config/functionPool...');
-    const functionPool = await fetchData('/config/functionPool');
-    console.log('✓ Response received:');
-    console.log(JSON.stringify(functionPool, null, 2));
-    console.log('');
-  } catch (error) {
-    console.error('✗ Error:', error.message);
-    console.log('');
-  }
+    // -----------------------------------------------------------------------
+    // 3. Build a tree for a single app
+    // -----------------------------------------------------------------------
+    const appName = 'nims-wt-pend-process-app';
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`Loading app config: ${appName}`);
+    console.log('='.repeat(60));
 
-  // Test 2: GET /apps (list all apps)
-  try {
-    console.log('Testing GET /apps...');
-    const appsList = await fetchData('/apps');
-    console.log('✓ Response received:');
-    console.log(JSON.stringify(appsList, null, 2));
-    console.log('');
+    const appConfig = await loadAppFromUrl(`${BASE_URL}/apps/${appName}`);
+    console.log(`App loaded: ${appConfig.name}  (type: ${appConfig.type})`);
 
-    // Test 3: GET individual apps
-    if (appsList.apps && appsList.apps.length > 0) {
-      for (const appName of appsList.apps.slice(0, 2)) { // Test first 2 apps
-        try {
-          console.log(`Testing GET /apps/${appName}...`);
-          const appData = await fetchData(`/apps/${appName}`);
-          console.log('✓ Response received:');
-          console.log(JSON.stringify(appData, null, 2));
-          console.log('');
-        } catch (error) {
-          console.error(`✗ Error testing /apps/${appName}:`, error.message);
-          console.log('');
-        }
-      }
+    const builder = new TreeBuilder();
+    builder.defineFunctions(functionPool);
+
+    const tree = await builder.build(appConfig);
+    console.log('\nResolved tree:');
+    console.log(JSON.stringify(tree, null, 2));
+
+    // -----------------------------------------------------------------------
+    // 4. Build trees for every app
+    // -----------------------------------------------------------------------
+    console.log(`\n${'='.repeat(60)}`);
+    console.log('Building trees for all apps');
+    console.log('='.repeat(60));
+
+    for (const name of apps) {
+        const config = await loadAppFromUrl(`${BASE_URL}/apps/${name}`);
+        const appTree = await builder.build(config);
+
+        const childCount = appTree.children?.length || 0;
+        const funcs      = appTree.children?.filter(c => c.type === 'function').length || 0;
+        const services   = appTree.children?.filter(c => c.type === 'ui-services').length || 0;
+
+        console.log(`\n${name}:`);
+        console.log(`  Direct children: ${childCount}`);
+        console.log(`  - Function refs: ${funcs}`);
+        console.log(`  - UI Services:   ${services}`);
     }
-  } catch (error) {
-    console.error('✗ Error:', error.message);
-    console.log('');
-  }
 
-  // Test 4: Test non-existent endpoint (should return 404)
-  try {
-    console.log('Testing GET /apps/non-existent (expect 404)...');
-    await fetchData('/apps/non-existent');
-  } catch (error) {
-    console.log('✓ Expected error:', error.message);
-    console.log('');
-  }
+    // -----------------------------------------------------------------------
+    // 5. Demo with Authorization header (simulating protected endpoint)
+    // -----------------------------------------------------------------------
+    console.log('\n--- Fetch with custom headers (auth demo) ---');
+    const poolAgain = await loadFunctionPool(`${BASE_URL}/config/functionPool`, {
+        headers: { 'Authorization': 'Bearer test-token-123' }
+    });
+    console.log(`Fetched with auth header – ${Object.keys(poolAgain).length} functions`);
 
-  console.log('✅ Tests completed!');
-  console.log('\nNote: Make sure the server is running (npm start) before running this client.');
+    console.log('\nDone!');
 }
 
-// Check if server is running before testing
-console.log('Checking if server is running...\n');
-testServer().catch(err => {
-  console.error('❌ Failed to connect to server:', err.message);
-  console.log('\n💡 Start the server first with: npm start');
-  process.exit(1);
+main().catch(err => {
+    console.error('Error:', err.message);
+    console.error('\nMake sure the server is running:  node server.js');
+    process.exit(1);
 });
