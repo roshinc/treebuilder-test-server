@@ -1,0 +1,27 @@
+{
+  "functions": [
+    {
+      "id": "fn-001",
+      "name": "calculateSum",
+      "description": "Calculates the sum of two numbers",
+      "parameters": ["a", "b"],
+      "returnType": "number"
+    },
+    {
+      "id": "fn-002",
+      "name": "formatString",
+      "description": "Formats a string with given parameters",
+      "parameters": ["template", "values"],
+      "returnType": "string"
+    },
+    {
+      "id": "fn-003",
+      "name": "validateInput",
+      "description": "Validates user input against rules",
+      "parameters": ["input", "rules"],
+      "returnType": "boolean"
+    }
+  ],
+  "version": "1.0.0",
+  "lastUpdated": "2026-02-03"
+}

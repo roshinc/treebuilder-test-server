@@ -1,0 +1,26 @@
+{
+  "name": "app2",
+  "displayName": "Sample Application 2",
+  "version": "2.1.0",
+  "config": {
+    "theme": "dark",
+    "language": "es",
+    "features": {
+      "notifications": true,
+      "darkMode": true,
+      "autoSave": false
+    }
+  },
+  "components": [
+    {
+      "id": "comp-1",
+      "type": "navigation",
+      "items": ["Home", "About", "Contact"]
+    },
+    {
+      "id": "comp-2",
+      "type": "dashboard",
+      "widgets": ["stats", "charts", "alerts"]
+    }
+  ]
+}

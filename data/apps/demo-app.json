@@ -1,0 +1,32 @@
+{
+  "name": "demo-app",
+  "displayName": "Demo Application",
+  "version": "3.0.0",
+  "config": {
+    "theme": "blue",
+    "language": "en",
+    "features": {
+      "notifications": true,
+      "darkMode": true,
+      "autoSave": true,
+      "analytics": true
+    }
+  },
+  "components": [
+    {
+      "id": "comp-1",
+      "type": "sidebar",
+      "position": "left"
+    },
+    {
+      "id": "comp-2",
+      "type": "mainContent",
+      "layout": "grid"
+    },
+    {
+      "id": "comp-3",
+      "type": "footer",
+      "content": "© 2026 Demo App"
+    }
+  ]
+}
