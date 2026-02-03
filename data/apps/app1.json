@@ -1,0 +1,26 @@
+{
+  "name": "app1",
+  "displayName": "Sample Application 1",
+  "version": "1.0.0",
+  "config": {
+    "theme": "light",
+    "language": "en",
+    "features": {
+      "notifications": true,
+      "darkMode": false,
+      "autoSave": true
+    }
+  },
+  "components": [
+    {
+      "id": "comp-1",
+      "type": "header",
+      "title": "Welcome to App1"
+    },
+    {
+      "id": "comp-2",
+      "type": "content",
+      "data": "This is a sample application configuration"
+    }
+  ]
+}
